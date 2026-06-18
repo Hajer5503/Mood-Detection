@@ -1,0 +1,1406 @@
+---
+title: "Projet de Détection d'Humeur"
+author: |
+  \begin{tabular}{@{}c@{}}
+  Abdelkefi Hajer, Aloui Oussema, Ben Abdallah Ameni, \\
+  Ben Achour Firas, Chtourou Oumaima, Messaoudia Sarra
+  \end{tabular}
+date: "2025-12-06"
+output:
+  pdf_document:
+    number_sections: true
+    latex_engine: xelatex
+    toc: true
+    toc_depth: 3
+header-includes:
+- \setcounter{section}{0}
+- \usepackage[strings]{underscore}
+- \usepackage{booktabs} % Pour des beaux tableaux
+- \usepackage{array}    % Pour l'alignement des colonnes
+- \usepackage{multirow} % Si vous avez des cellules fusionnées verticalement
+- \usepackage{colortbl} % Pour colorer des lignes si nécessaire
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(kableExtra)
+library(dplyr)
+library(gridExtra)
+```
+
+
+
+\newpage
+
+\section*{\textbf{Chapitre 1: Context Génerale}}
+\section {Introduction}
+
+Au-delà de l'Individu Isolé La reconnaissance automatique des émotions (Affective Computing) a réalisé des progrès significatifs en se concentrant sur l'individu isolé face à un stimulus. Les approches traditionnelles supposent que l'état émotionnel est une réponse directe et personnelle au contenu, mesurée via des signaux physiologiques (EEG, ECG, GSR) ou des expressions faciales. Cependant, cette vision est réductrice. Dans la réalité, une grande partie de nos expériences émotionnelles se vit en situation sociale : regarder un film entre amis, assister à un concert, ou même réagir à une vidéo sur les réseaux sociaux. Dans ces contextes, l'émotion n'est pas seulement une réponse individuelle ; elle est modulée, amplifiée ou inhibée par la présence et les réactions des autres. Phénomène de Contagion Émotionnelle : Le rire ou la peur d'une personne peut se propager au sein d'un groupe. Influence Sociale : Un individu peut supprimer une réaction (comme un rire) par gêne ou, au contraire, l'exagérer pour s'intégrer. Synchronicité et Désaccord : Les réactions d'un groupe peuvent être parfaitement synchronisées ou, au contraire, montrer des divergences intéressantes liées à la personnalité de chacun.
+
+\section {Problématique}
+
+L'\textit{affective computing} vise la détection, la modélisation et la synthèse des émotions humaines dans l'interaction homme-machine. Cepandant Les bases de données existantes se concentrent principalement sur des expériences individuelles, limitant l'étude des émotions dans des situations réelles où les interactions sociales jouent un rôle majeur. Cette limite découle directement des ressources disponibles pour la recherche . 
+\subsection {Lacunes des anciennes données }
+
+Les principales limitations identifiées sont :
+
+\begin{itemize}
+\item \textbf{Contexte exclusivement individuel} : Les bases de données existantes (comme DEAP, MAHNOB-HCI) excellent pour l'étude de l'individu seul, mais ignorent complètement la dimension sociale.
+\item \textbf{Absence de dynamique de groupe} : Les interactions sociales et les phénomènes collectifs (contagion, synchronisation), pourtant cruciaux dans les expériences affectives réelles, ne sont pas capturés.
+\item \textbf{Modèles socialement « aveugles »} : Les modèles d'IA entraînés sur ces données sont donc potentiellement inadaptés et pourraient faire des prédictions erronées dans des situations réelles et collectives.
+\item \textbf{Stimuli standardisés et restreints} : L'utilisation majoritaire de vidéos ou d'images courtes et isolées ne reflète pas la complexité et la continuité des expériences émotionnelles narratives, comme le visionnage d'un film.
+\end{itemize}
+
+\subsection{Formulation du Problème de Recherche}
+
+Cette analyse soulève la question centrale suivante :
+Comment pouvons-nous concevoir et entraîner des systèmes de reconnaissance des émotions qui ne se contentent pas d'analyser l'individu de manière isolée, mais qui sont capables de comprendre comment le contexte social influence et modifie l'expression et l'expérience émotionnelle ?
+
+Pour opérationnaliser cette problématique générale, nous la déclinons en sous-questions de recherche spécifiques :
+
+\begin{itemize}
+\item \textbf{Comment capturer les interactions émotionnelles au sein d'un groupe ?} Quels signaux (visuels, acoustiques, physiologiques) et quelles métriques (synchronisation, convergence) permettent de mesurer la dynamique affective collective ?
+\item \textbf{Comment l'état émotionnel d'un individu diffère-t-il entre une expérience solitaire et une expérience de groupe ?} Peut-on identifier des patrons d'expression (amplification, suppression) liés au contexte social ?
+\item \textbf{Comment la présence d'autrui module-t-elle la réaction à un stimulus émotionnel ?} Quel est l'impact de facteurs tels que la contagion, l'influence sociale ou la cohésion du groupe sur la réponse individuelle ?
+\item \textbf{Comment construire un modèle de reconnaissance d'émotions qui intègre ce contexte social comme une variable explicative ?} Quelles architectures (réseaux de neurones graphiques, modèles attentionnels) peuvent apprendre à la fois des caractéristiques individuelles et des relations interpersonnelles ?
+\item \textbf{Quel est le gain en performance et en robustesse d'un modèle entraîné sur des données de groupe par rapport à un modèle standard ?} Ce modèle généralise-t-il mieux à des situations sociales réelles et inédites ?
+\end{itemize}
+
+\section{Solutions proposées}
+
+Pour répondre aux lacunes identifiées et adresser la problématique de recherche, nous proposons l'approche suivante :
+
+\subsection{Cadre exhaustif de collecte de données multimodales}
+
+\begin{itemize}
+\item \textbf{Conception à double contexte social} :
+\begin{itemize}
+\item \textit{Contexte individuel} : Participants visionnant des stimuli seuls (40 participants pour vidéos courtes ; 17 participants pour vidéos longues)
+\item \textit{Contexte de groupe} : Participants visionnant des vidéos longues en groupes de 4 personnes (5 groupes, 20 participants au total)
+\end{itemize}
+
+\item \textbf{Double durée de stimuli} :
+\begin{itemize}
+\item \textit{Vidéos courtes (16)} : 51-150 secondes chacune, ciblant des quadrants spécifiques valence-arousal
+\item \textit{Vidéos longues (4)} : 14-24 minutes chacune, élicitant divers états affectifs via la narration
+\end{itemize}
+
+\item \textbf{Évaluation multi-couches} :
+\begin{itemize}
+\item \textit{Signaux physiologiques} : EEG (14 canaux), ECG, GSR utilisant des capteurs portables
+\item \textit{Enregistrement comportemental} : Vidéo HD frontale, vidéos RGB et profondeur du corps entier
+\item \textit{Mesures d'auto-évaluation} : Valence, arousal, dominance, liking, familiarité, émotions de base
+\item \textit{Annotation externe} : Trois annotateurs évaluant valence et arousal à partir des vidéos faciales
+\item \textit{Évaluation des traits} : Traits de personnalité Big-Five et PANAS (Positive and Negative Affect Schedule)
+\end{itemize}
+\end{itemize}
+
+\subsection{Approche analytique systématique}
+Notre méthodologie statistique repose sur une analyse progressive et structurée des données du dataset AMIGOS, en suivant un pipeline classique de data science :
+
+\textbf{1. Préparation et exploration univariée des données :}
+\begin{itemize}
+\item Vérification de l'intégrité des données (doublons, valeurs manquantes)
+\item Détection et analyse des valeurs aberrantes par visualisation (boxplots)
+\item Analyse de la distribution des variables qualitatives (fréquences) et quantitatives (histogrammes, QQ-plots, tests de Shapiro-Wilk)
+\item Décision d'utiliser des méthodes non paramétriques pour la suite des analyses
+\end{itemize}
+
+\textbf{2. Analyse bivariée et tests d'hypothèses :}
+\begin{itemize}
+\item \textit{Variables qualitatives vs. qualitatives} : Test d'indépendance du Chi-deux
+\item \textit{Variables quantitatives vs. quantitatives} : Matrice de corrélation de Spearman (robuste à la non-normalité)
+\item \textit{Variables quantitatives vs. qualitatives binaires} : Tests de Mann-Whitney (alternative non paramétrique au test t)
+\item Étude spécifique des corrélations entre les dimensions émotionnelles continues (valence, arousal, dominance, liking, familiarity)
+\end{itemize}
+
+\textbf{3. Modélisation statistique multivariée :}
+\begin{itemize}
+\item \textit{Régression linéaire multiple} : Pour chaque variable cible continue (valence, arousal, etc.), évaluation de l'influence combinée des variables physiologiques (EEG, ECG, GSR), émotionnelles binaires et du type de vidéo.
+\item Vérification des hypothèses des modèles (normalité et homoscédasticité des résidus)
+\item Synthèse et interprétation des prédicteurs significatifs et de la qualité des modèles (R², R² ajusté)
+\item \textit{Régression logistique} : Modélisation de variables cibles binaires (comme le bonheur - happiness) en fonction des dimensions affectives et des signaux physiologiques. Évaluation de la performance par matrice de confusion, exactitude (accuracy) et courbe ROC/AUC
+\item Extension de la modélisation logistique à d'autres cibles émotionnelles binarisées (valence haute/basse, etc.)
+\end{itemize}
+
+\subsection{Validation expérimentale rigoureuse}
+Notre démarche de validation repose sur les principes de robustesse et de reproductibilité de l'analyse statistique :
+
+\textbf{Validation des modèles de régression :}
+\begin{itemize}
+\item Utilisation de métriques statistiques standard pour évaluer la qualité et la significativité des modèles
+\item Pour la régression linéaire : R², R² ajusté, test F global, et valeurs-p des coefficients
+\item Pour la régression logistique : Exactitude (Accuracy), statistiques de la matrice de confusion, et aire sous la courbe ROC (AUC)
+\end{itemize}
+
+\textbf{Diagnostics des résidus :}
+\begin{itemize}
+\item Vérification systématique des hypothèses de normalité (test de Shapiro-Wilk sur les résidus) et d'homoscédasticité pour les modèles linéaires
+\item Les résultats sont interprétés en tenant compte du contexte social (vidéos courtes individuelles vs. vidéos longues en groupe) lorsque la variable video_type est significative
+\item La discussion des résultats intègre les limitations intrinsèques des modèles (faibles R² ajustés, non-normalité persistante), ce qui guide les conclusions vers une interprétation prudente et orientée vers l'exploration des relations plutôt que vers la prédiction forte
+\end{itemize}
+
+\textbf{Reproductibilité :}
+\begin{itemize}
+\item Tout le code d'analyse (en R) est fourni, permettant une réplication exacte des résultats
+\item Les décisions méthodologiques (choix de tests non paramétriques, encodage des variables, traitement des données) sont explicitement justifiées à partir des résultats des analyses exploratoires
+\end{itemize}
+\newpage
+
+\section {description de donnée (AMIGOS DATASET)}
+
+\subsection{Structure générale}
+Le dataset AMIGOS se compose des éléments suivants :
+```{r structure-table, echo=FALSE}
+structure_data <- data.frame(
+  "Élément" = c("Observations", "Participants", "Vidéos", "Types de vidéos"),
+  "Détails" = c("800", "40 triée de 1 à 20", "20 triée de 1 à 20", "short, long")
+)
+kable(structure_data, "latex", booktabs = FALSE, caption = "Structure générale du dataset AMIGOS", align = "l" ,label = "Structure générale du dataset AMIGOS") %>%
+  kable_styling(full_width = FALSE, latex_options = c("HOLD_position")) %>%
+  row_spec(0, bold = TRUE) %>%
+  column_spec(1, width = "6cm", border_left = TRUE, border_right = FALSE) %>%
+  column_spec(2, width = "10cm", border_left = FALSE, border_right = TRUE)
+
+```
+\subsection{Description des variables}
+\subsubsection{Variables quantitatives}
+\begin{itemize}
+\item \textbf{Variables cibles (à expliquer)} :
+```{r target-vars-table, echo=FALSE}
+target_vars <- data.frame(
+"Variable" = c("valence", "arousal", "dominance", "liking", "familiarity"),
+"Description" = c("Caractère agréable/désagréable",
+"Niveau d'excitation",
+"Sentiment de contrôle",
+"Degré d'appréciation",
+"Niveau de familiarité"),
+"Échelle" = c("1–9", "1–9", "1–9", "1–9", "1–9")
+)
+
+kable(target_vars, "latex", booktabs = FALSE,
+caption = "Variables quantitatives : variables cibles (échelle 1–9)",align = "l",label = "Variables quantitatives : variables cibles (échelle 1–9)") %>%
+kable_styling(full_width = FALSE, latex_options = "HOLD_position") %>%
+row_spec(0, bold = TRUE)%>%
+  column_spec(1, width = "5cm", border_left = TRUE, border_right = FALSE) %>%
+  column_spec(2, width = "8cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(3, width = "2cm", border_left = FALSE, border_right = TRUE)
+```
+\item\textbf{Variables Physiologiques (explicatives)}
+```{r Physiologiques-vars-table, echo=FALSE}
+physio_vars <- data.frame(
+"Variables" = c("EEG_1 à EEG_14", "ECG_1", "ECG_2", "GSR_1"),
+"Description" = c("14 canaux EEG (activité cérébrale)",
+"Canal ECG 1 (activité cardiaque)",
+"Canal ECG 2 (activité cardiaque)",
+"Réponse galvanique de la peau (GSR)")
+)
+
+kable(physio_vars, "latex", booktabs = FALSE,
+caption = "Variables quantitatives : variables physiologiques", align="l",label = "Variables quantitatives : variables physiologiques") %>%
+kable_styling(full_width = FALSE, latex_options = "HOLD_position") %>%
+row_spec(0, bold = TRUE)%>%
+  column_spec(1, width = "6cm", border_left = TRUE, border_right = FALSE) %>%
+  column_spec(2, width = "10cm", border_left = FALSE, border_right = TRUE)
+```
+\end{itemize}
+\newpage
+\subsubsection{Variables qualitatives}
+\begin{itemize}
+\item \textbf{Variables Émotionnelles(explicatives)} :
+```{r Émotional-vars-table, echo=FALSE}
+emotion_vars <- data.frame(
+"Variable" = c("anger", "disgust", "fear", "happiness", "sadness", "surprise"),
+"Description" = c("Colère", "Dégoût", "Peur",
+"Joie", "Tristesse", "Surprise"),
+"Type" = rep("Binaire (0/1)", 6)
+)
+
+kable(emotion_vars, "latex", booktabs = FALSE,
+caption = "Variables qualitatives : variables émotionnelles (0/1)",align="l",label = "Variables qualitatives : variables émotionnelles (0/1)") %>%
+kable_styling(full_width = FALSE, latex_options = "HOLD_position") %>%
+row_spec(0, bold = TRUE)%>%
+  column_spec(1, width = "5cm", border_left = TRUE, border_right = FALSE) %>%
+  column_spec(2, width = "6cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(3, width = "4cm", border_left = FALSE, border_right = TRUE)
+```
+\item \textbf{Variables Catégorielles et identifiants(explicatives)} :
+```{r Catégorial & Ids-Vars, echo=FALSE}
+qual_vars <- data.frame(
+"Variable" = c("participant_id", "video_id", "video_type"),
+"Description" = c("Identifiant du participant (1–40)",
+"Identifiant de la vidéo (1–20)",
+"Type de vidéo (short / long)")
+)
+
+kable(qual_vars, "latex", booktabs = FALSE,
+caption = "Variables qualitatives : identifiants et catégories",align="l",label = "Variables qualitatives : identifiants et catégories") %>%
+kable_styling(full_width = FALSE, latex_options = "HOLD_position") %>%
+row_spec(0, bold = TRUE)%>%
+  column_spec(1, width = "6cm", border_left = TRUE, border_right = FALSE) %>%
+  column_spec(2, width = "10cm", border_left = FALSE, border_right = TRUE)
+```
+\end{itemize}
+
+\section {Analyse univariée}
+\subsection{Préparation des données}
+
+- \textbf{Importation des donnée} 
+```{r}
+data <- read.csv(file.choose(), sep = ",", dec = ".", header = TRUE)
+```
+- \textbf{Résumé des données}
+ 
+```{r, eval=FALSE}
+head(data)
+```
+```{r echo=FALSE}
+cols_part1 <- c("video_type",
+  "valence","arousal","dominance","liking","familiarity")
+
+kable(head(data[ , cols_part1]), "latex", booktabs = FALSE,
+      caption = "Aperçu des données — Partie 1.1 : variables principales",align="l",label = "Aperçu des données — Partie 1.1 : variables principales") %>%
+  kable_styling(full_width = FALSE, latex_options = "HOLD_position") %>%
+row_spec(0, bold = TRUE)%>%
+  column_spec(1, width = "2cm", border_left = TRUE, border_right = FALSE) %>%
+  column_spec(2, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(3, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(4, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(5, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(6, width = "2cm", border_left = FALSE, border_right = TRUE)
+
+
+cols_part2 <- c(
+  "anger","disgust","fear","happiness","sadness","surprise"
+)
+
+kable(head(data[ , cols_part2]), "latex", booktabs = FALSE,
+      caption = "Aperçu des données — Partie 1.2 : variables principales",align="l",label = "Aperçu des données — Partie 1.2 : variables principales") %>%
+  kable_styling(full_width = FALSE, latex_options = "HOLD_position") %>%
+row_spec(0, bold = TRUE)%>%
+  column_spec(1, width = "2cm", border_left = TRUE, border_right = FALSE) %>%
+  column_spec(2, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(3, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(4, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(5, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(6, width = "2cm", border_left = FALSE, border_right = TRUE)
+
+
+cols_part3 <- grep("EEG", names(data), value = TRUE)
+cols_part3_part1 <- cols_part3[1:7]
+cols_part3_part2 <- cols_part3[8:14]
+kable(head(data[ , cols_part3_part1]), "latex", booktabs = FALSE,
+      caption = "Aperçu des données — Partie 2.1 : variables physiologiques",align = "l",label = "Aperçu des données — Partie 2.1 : variables physiologiques") %>%
+  kable_styling(full_width = FALSE, latex_options = "HOLD_position")%>%
+  column_spec(1, width = "2cm", border_left = TRUE, border_right = FALSE) %>%
+  column_spec(2, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(3, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(4, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(5, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(6, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(7, width = "2cm", border_left = FALSE, border_right = TRUE)
+  
+
+kable(head(data[ , cols_part3_part2]), "latex", booktabs = FALSE,
+      caption = "Aperçu des données — Partie 2.2 : variables physiologiques",align = "l",label = "Aperçu des données — Partie 2.2 : variables physiologiques") %>%
+  kable_styling(full_width = FALSE, latex_options = "HOLD_position")%>%
+  column_spec(1, width = "2cm", border_left = TRUE, border_right = FALSE) %>%
+  column_spec(2, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(3, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(4, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(5, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(6, width = "2cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(7, width = "2cm", border_left = FALSE, border_right = TRUE)
+
+cols_part4 <- grep("ECG|GSR", names(data), value = TRUE)
+kable(head(data[ , cols_part4]), "latex", booktabs = FALSE,
+      caption = "Aperçu des données — Partie 2.3 : variables physiologiques",align = "l",label = "Aperçu des données — Partie 2.3 : variables physiologiques") %>%
+  kable_styling(full_width = FALSE, latex_options = "HOLD_position")%>%
+  column_spec(1, width = "5cm", border_left = TRUE, border_right = FALSE) %>%
+  column_spec(2, width = "5cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(3, width = "5cm", border_left = FALSE, border_right = TRUE)
+
+```
+```{r eval=FALSE}
+str(data)
+```
+```{r echo=FALSE}
+str_table <- tibble(
+  Variable = names(data),
+  Type = sapply(data, class),
+  Example = sapply(data, function(x) paste(head(x,1), collapse = ", "))
+)
+
+kable(str_table, "latex", booktabs = FALSE,longtable = TRUE,
+      caption = "Structure du jeu de données",align="l",label = "Structure du jeu de données") %>%
+  kable_styling(full_width = FALSE, latex_options = c("HOLD_position","repeat_header")) %>%
+  row_spec(0, bold = TRUE)%>%
+  column_spec(1, width = "5cm", border_left = TRUE, border_right = FALSE)%>%
+  column_spec(2, width = "5cm", border_left = FALSE, border_right = FALSE)%>%
+  column_spec(3, width = "5cm", border_left = FALSE, border_right = TRUE)
+```
+```{r}
+summary(data)
+```
+\subsection{Traitement des données}
+\subsubsection{données dupliquées}
+```{r results='asis'}
+any_duplicated <- any(duplicated(data))
+cat("**Présence de doublons :**", ifelse(any_duplicated, "OUI", "NON"), "\n")
+
+```
+\subsubsection{données manquantes}
+```{r}
+any_null<-sum(is.na(data))
+cat("**Présence de valeurs manquantes :**", ifelse(any_null, "OUI", "NON"), "\n")
+```
+
+```{r echo=FALSE}
+na_table <- data.frame(
+  Variable = names(data),
+  Missing_Values = sapply(data, function(x) sum(is.na(x)))
+)
+
+# Add a column for YES/NO
+na_table$Missing_Values <- ifelse(na_table$Missing_Values > 0, "OUI", "NON")
+
+# Print nicely
+kable(na_table, "latex", booktabs = FALSE,
+      caption = "Vérification des valeurs manquantes par variable",longtable = TRUE,
+      align = "lcc",label="Vérification des valeurs manquantes par variable") %>%
+  kable_styling(full_width = FALSE, latex_options = c("HOLD_position")) %>%
+  row_spec(0, bold = TRUE) %>%
+  column_spec(1, width = "4cm", border_left = TRUE, border_right = FALSE) %>%
+  column_spec(2, width = "4cm", border_left = FALSE, border_right = FALSE) %>%
+  column_spec(3, width = "4cm", border_left = FALSE, border_right = TRUE)
+```
+
+\subsubsection{Détection des valeurs aberrantes}
+
+```{r boxplots-paginated, fig.width=9, fig.height=6}
+features <- c(paste0("EEG_", 1:14), "ECG_1", "ECG_2", "GSR_1")
+
+plots_per_page <- 6      # 6 plots per page
+cols <- 3                # 2 columns
+rows <- 2                # 3 rows
+
+# covertir total_page vers une variable entier
+total_pages <- ceiling(length(features) / plots_per_page)
+
+for (page in 1:total_pages) {
+
+  start_idx <- (page - 1) * plots_per_page + 1
+  end_idx   <- min(page * plots_per_page, length(features))
+  page_features <- features[start_idx:end_idx]
+  layout(matrix(1:(rows*cols), nrow=rows, byrow=TRUE))
+  for (f in page_features) {
+    boxplot(data[[f]],
+            main = paste("Distribution de", f),
+            col = "lightblue",
+            ylab = "Valeur",
+            xlab = "")
+
+    mtext(paste("Médiane:", round(median(data[[f]]), 2)),
+          side = 1, line = 2, cex = 0.7, col = "blue")
+  }
+  
+   if (page < total_pages) {
+    grid::grid.newpage()
+  }
+  
+  
+}
+```
+\newpage
+\textbf{INTERPRÉTATION DES BOXPLOTS-Observations principales:}
+
+\begin{enumerate}
+\item \textbf{Signaux EEG} : Tous les canaux présentent une distribution symétrique autour de zéro avec une plage d'environ -50 à +50. Aucune valeur aberrante n'a été détectée.
+
+\item \textbf{Signaux ECG} : Distribution centrée autour de 1,2-1,3 avec peu de variabilité. Aucune valeur aberrante n'a été détectée.
+
+\item \textbf{Signal GSR} : Distribution asymétrique autour de 2.6 .Aucune valeur aberrante n'a été détectée.
+\end{enumerate}
+
+\subsubsection{Modalité des variable qualitatives}
+```{r results='asis'}
+cols <- c("anger", "disgust", "fear", "happiness", "sadness", "surprise", "video_type")
+
+for(col in cols){
+  cat("\n**Distribution de la variable :", col, "**\n\n")
+  tab <- table(data[[col]])
+  print(kable(as.data.frame(tab), col.names = c("Valeur", "Nombre"), 
+        caption = paste("Table des fréquences pour", col), align = "l", label="Modalité") %>%
+    kable_styling(full_width = FALSE, latex_options = "HOLD_position") %>%
+    row_spec(0, bold = TRUE) %>%
+  column_spec(1, width = "6cm", border_left = TRUE, border_right = FALSE) %>%
+  column_spec(2, width = "6cm", border_left = FALSE, border_right = TRUE))
+}
+
+
+```
+
+\subsubsection{Test de normalité}
+\paragraph{approche graphique - histogramme}
+--
+```{r fig.width=9, fig.height=6}
+features <- c("valence", "arousal", "dominance", "liking", "familiarity")
+
+# Set layout based on number of features
+n <- length(features)
+cols <- ifelse(n <= 3, n, 3)  # Max 3 columns
+rows <- ceiling(n / cols)
+
+# Set up the plot layout
+par(mfrow = c(rows, cols), mar = c(3, 3, 2, 1))
+
+# Create histograms
+for(v in features){
+  x_vals <- data[[v]]
+  hist(x_vals,
+       main = v,
+       xlab = "",
+       col = "lightyellow",
+       breaks = 30,
+       prob = TRUE)
+  curve(dnorm(x, mean = mean(x_vals), sd = sd(x_vals)),
+        add = TRUE, col = "red", lwd = 2)
+}
+
+```
+
+\textbf{Interprétation des distributions des variables cibles}
+
+\begin{itemize}
+
+\item \textbf{Forme générale :}  
+Les cinq variables cibles (\textit{valence}, \textit{arousal}, \textit{dominance}, \textit{liking} et \textit{familiarity}) présentent une forme proche d’une distribution normale. La courbe de densité superposée (en rouge) suit une forme en cloche régulière, suggérant une répartition relativement homogène autour d’une valeur centrale.
+
+\item \textbf{Symétrie :}  
+Les distributions apparaissent globalement symétriques, avec des écarts limités entre les queues gauche et droite. Cela indique une absence de biais marqué (pas d’asymétrie forte vers des valeurs basses ou élevées).
+
+\item \textbf{Dispersion :}  
+La variabilité observée est comparable entre les différentes variables : la majorité des observations se concentrent autour des valeurs moyennes (entre 4 et 7 selon les variables).
+
+\end{itemize}
+
+
+\paragraph{Approche grahique-QQPlots}
+--
+```{r fig.width=9, fig.height=6}
+
+features <- c("valence", "arousal", "dominance", "liking", "familiarity")
+
+# Set layout based on number of features
+n <- length(features)
+cols <- ifelse(n <= 3, n, 3)  # Max 3 columns
+rows <- ceiling(n / cols)
+
+# Set up the plot layout
+par(mfrow = c(rows, cols), mar = c(3, 3, 2, 1))
+
+# Create histograms
+for(v in features){
+  x_vals <- data[[v]]
+  qqnorm(x_vals,
+           datax = TRUE,
+           col = "blue",
+           pch = 19,
+           cex = 0.7,
+           main = v,
+           xlab = "",
+           ylab = "",
+           cex.main = 0.9)
+    
+    # Ajouter la ligne de référence
+    qqline(x_vals, 
+           datax = TRUE, 
+           col = "black", 
+           lwd = 3)
+    
+        if(length(x_vals) > 5000) {
+      sample_size <- 5000
+      set.seed(123)
+      sample_data <- sample(x_vals, size = sample_size)
+    } else {
+      sample_data <- x_vals
+    }
+    
+    shapiro_test <- shapiro.test(sample_data)
+    
+    # Afficher la p-value
+    mtext(paste("p =", format.pval(shapiro_test$p.value, digits = 3)),
+          side = 3, line = -1.2, cex = 0.6, 
+          col = ifelse(shapiro_test$p.value < 0.05, "orange", "yellow"))
+      # Labels d'axes communs
+  mtext("Quantiles théoriques", side = 1, outer = TRUE, cex = 0.9, line = 0.5)
+  mtext("Quantiles observés", side = 2, outer = TRUE, cex = 0.9, line = 0.5)
+}
+
+```
+\textbf{INTERPRÉTATION DES Q-Q PLOTS-Comment lire un Q-Q Plot?}
+
+\begin{enumerate}
+\item \textbf{Points alignés sur la ligne noir} : Distribution normale parfaite
+\item \textbf{Forme en 'S'} : Queues de distribution plus épaisses que la normale
+\item \textbf{Forme en 'U inversé'} : Queues de distribution plus fines que la normale
+\item \textbf{Courbe vers le haut} : Asymétrie positive (queue à droite)
+\item \textbf{Courbe vers le bas} : Asymétrie négative (queue à gauche)
+\end{enumerate}
+
+\textbf{Observations pour nos données :}
+
+\begin{itemize}
+    \item \textbf{VALENCE} 
+    \begin{itemize}
+        \item \textbf{Forme observée :} Courbe en "S" modérée
+        \item \textbf{Interprétation :} Distribution avec queues légèrement plus épaisses qu'une loi normale
+        \item \textbf{Impact :} Valeurs extrêmes (très basses et très hautes valence) un peu plus fréquentes que prévu par la normale
+    \end{itemize}
+    
+    \item \textbf{AROUSAL}
+    \begin{itemize}
+        \item \textbf{Forme observée :} Courbure vers le haut aux extrémités
+        \item \textbf{Interprétation :} Asymétrie positive - présence d'une queue étirée vers la droite
+        \item \textbf{Impact :} Quelques valeurs d'activation émotionnelle très élevées (arousal fort)
+    \end{itemize}
+    
+    \item \textbf{DOMINANCE}
+    \begin{itemize}
+        \item \textbf{Forme observée :} Courbe en "S" accentuée
+        \item \textbf{Interprétation :} Queues prononcées - distribution "lourde" aux extrémités
+        \item \textbf{Impact :} Les sentiments de contrôle très faibles et très forts sont surreprésentés
+    \end{itemize}
+    
+    \item \textbf{LIKING (préférence)}
+    \begin{itemize}
+        \item \textbf{Forme observée :} Courbure marquée vers le haut
+        \item \textbf{Interprétation :} Forte asymétrie positive - beaucoup de scores moyens/faibles, peu de scores très élevés
+        \item \textbf{Impact :} Les "coups de cœur" (liking très fort) sont rares dans les données
+    \end{itemize}
+    
+    \item \textbf{FAMILIARITÉ}
+    \begin{itemize}
+        \item \textbf{Forme observée :} Courbe en "S" asymétrique
+        \item \textbf{Interprétation :} Queues épaisses combinées à une légère asymétrie positive
+        \item \textbf{Impact :} Mix entre présence d'extrêmes (très familier/très étrange) et tendance à l'asymétrie vers la familiarité
+    \end{itemize}
+\end{itemize}
+\newpage
+\paragraph{approche analytique -- shapiro-wilk}
+```{r echo=FALSE, results='asis'}
+cat("\\")
+```
+
+```{r echo=FALSE}
+library(kableExtra)
+
+variables <-c("valence", "arousal", "dominance", "liking", "familiarity")
+
+# --- Collect all results ---
+results <- data.frame(
+  Variable = character(),
+  P_value = numeric(),
+  stringsAsFactors = FALSE
+)
+
+for (v in variables) {
+  x <- data[[v]]
+  test_res <- shapiro.test(x)
+  results <- rbind(
+    results,
+    data.frame(
+      Variable = v,
+      P_value = test_res$p.value
+    )
+  )
+}
+
+# Format p-values appropriately for display
+results$P_display <- sapply(results$P_value, function(p) {
+  if (is.na(p)) {
+    return("NA")
+  } else if (p < 2.2e-16) {
+    return("$<$ 2.2e-16")  # LaTeX format for < symbol
+  } else if (p < 0.001) {
+    return(format(p, scientific = TRUE, digits = 2))
+  } else {
+    return(sprintf("%.4f", p))
+  }
+})
+
+# Add a simple conclusion column
+results$Conclusion <- ifelse(results$P_value < 0.05,
+                             "Non normale", "Normale")
+
+# --- SIMPLE, CLEAN TABLE ---
+results %>%
+  select(Variable, `p-value` = P_display, Conclusion) %>%
+  kable(format = "latex",
+        booktabs = FALSE,
+        escape = FALSE,  # IMPORTANT: allows LaTeX symbols
+        caption = "Tests de Shapiro-Wilk pour la normalité des signaux",
+        align = c("l", "r", "c")) %>%
+  kable_styling(
+    latex_options = c("HOLD_position"),
+    full_width = FALSE,
+    position = "center",
+    font_size = 9
+  ) %>%
+  row_spec(0, bold = TRUE) %>%
+  column_spec(1, bold = TRUE,width = "4cm", border_left = TRUE, border_right = FALSE) %>%
+  column_spec(2, bold = TRUE,width = "4cm", border_left = FALSE, border_right = FALSE) %>%
+  column_spec(3,width = "4cm", border_left = FALSE, border_right = TRUE)
+
+```
+
+\subsubsection{Encodage des variable qualitatives catégorille }
+```{r}
+data$video_type <- ifelse(data$video_type == "short", 0, 1)
+```
+\subsubsection{suppression des variable inutilisable }
+```{r}
+data <- subset(data, select = -c(participant_id, video_id))
+```
+
+\subsection{Interprétation globale des analyses univariées }
+
+```{r echo=FALSE}
+interpretation_summary <- data.frame(
+  "Aspect analysé" = c(
+    "Normalité des distributions",
+    "Valeurs aberrantes",
+    "Symétrie des distributions",
+    "Homogénéité des variances",
+    "Qualité des données"
+  ),
+  
+  "Résultats" = c(
+    "Toutes les variables cibles rejettent l'hypothèse de normalité (p < 0.05)",
+    "absence d'outliers",
+    "Distributions généralement symétriques (skewness proche de zéro)",
+    "Variances relativement homogènes au sein de chaque type de signal",
+    "Données complètes sans valeurs manquantes, qualité satisfaisante"
+  ),
+  
+  "Implications statistiques" = c(
+    "Tests non-paramétriques requis pour toutes les analyses inférentielles",
+    "Aucune vérification de l'impact des outliers sur les résultats",
+    "Médiane préférable à la moyenne comme mesure de tendance centrale",
+    "Possibilité de comparer les variables sans transformations majeures",
+    "Analyse pouvant procéder sans étape supplémentaire de nettoyage"
+  ),
+  
+  "Recommandations" = c(
+    "Utiliser la corrélation de Spearman",
+    "Utilisation des données sans traitement des valeurs aberrantes",
+    "Présenter médiane et IQR plutôt que moyenne et écart-type",
+    "Privilégier des méthodes robustes aux différences de variance",
+    "Procéder directement aux analyses bivariées et modélisations"
+  )
+)
+
+library(kableExtra)
+kable(interpretation_summary, 
+      format = "latex",
+      booktabs = TRUE,
+      align = "l",
+      caption = "Synthèse interprétative des analyses univariées") %>%
+  kable_styling(
+    latex_options = c("HOLD_position", "striped"),
+    full_width = FALSE,
+    position = "center",
+    font_size = 9
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#2c3e50", color = "white") %>%
+  column_spec(1, bold = TRUE, width = "3cm") %>%
+  column_spec(2, width = "4cm") %>%
+  column_spec(3, width = "4cm") %>%
+  column_spec(4, width = "3cm")
+```
+\newpage
+\section{Analyse bivariée}
+
+\subsection{Analyse bivariée entre variables qualitatives}
+\subsubsection {Justification du choix des tests}
+\textbf{Choix retenu : Test du Chi-deux d'indépendance}
+
+\begin{itemize}
+\item \textbf{Adéquation aux données} : Test conçu pour variables catégorielles (émotions 0/1) et (type vidéo)
+\item \textbf{Méthodologie} : Compare fréquences observées vs attendues sous hypothèse d'indépendance
+
+\end{itemize}
+\subsubsection{Tests du Chi-deux d'indépendance}
+```{r}
+qual_vars <- c("video_type", "anger", "disgust", "fear", 
+               "happiness", "sadness", "surprise")
+
+
+
+qual_vars <- c("video_type", "anger", "disgust", "fear", 
+               "happiness", "sadness", "surprise")
+
+chi_square_tests <- function(vars, data) {
+  results <- data.frame()
+  
+  for(i in 1:(length(vars)-1)) {
+    for(j in (i+1):length(vars)) {
+      var1 <- vars[i]
+      var2 <- vars[j]
+      
+      # Table de contingence
+      cont_table <- table(data[[var1]], data[[var2]])
+      
+      # Test du Chi-deux - vérifier que le tableau a au moins 2x2
+      if(all(dim(cont_table) > 1)) {  
+        chi_test <- chisq.test(cont_table)
+        
+        # Ajouter les résultats
+        results <- rbind(results, data.frame(
+          Variable1 = var1,
+          Variable2 = var2,
+          p_value = round(chi_test$p.value, 4),
+          Significatif = ifelse(chi_test$p.value < 0.05, "OUI", "NON")
+        ))
+      }
+    }
+  }
+  
+  return(results)
+}
+
+
+chi_results <- chi_square_tests(qual_vars, data)
+
+kable(chi_results, 
+      format = "latex",
+      booktabs = FALSE,
+      caption = "Tests d'indépendance du Chi-deux entre variables qualitatives",
+      align = "lccc",
+      col.names = c("Variable 1", "Variable 2", "p-value", "Significatif")) %>%
+  kable_styling(font_size = 9, latex_options = c("HOLD_position")) %>%
+  row_spec(which(chi_results$Significatif == "OUI"), bold = TRUE)%>%
+  column_spec(1, bold = TRUE, width = "3cm",border_left = TRUE,border_right = FALSE) %>%
+  column_spec(2, bold = TRUE, width = "3cm",border_left = FALSE,border_right = FALSE) %>%
+  column_spec(3, bold = TRUE, width = "3cm",border_left = FALSE,border_right = FALSE) %>%
+  column_spec(4, bold = TRUE, width = "3cm",border_left = FALSE,border_right = TRUE)
+
+```
+
+
+
+
+\subsection{ Étude de la corrélation entre les variables quantitatives}
+\subsubsection {Justification du choix des tests de corrélation}
+
+Choix retenu : Corrélation de Spearman
+La corrélation de Spearman  a été sélectionnée pour les raisons suivantes :
+
+\begin{itemize}
+\item \textbf{Robustesse} : N'exige pas l'hypothèse de normalité des données
+\item \textbf{Sensibilité aux relations monotones} : Détecte les relations linéaires ET non-linéaires monotones
+\item \textbf{Interprétation standardisée} : Coefficient compris entre -1 et +1 avec interprétation similaire à Pearson
+\item \textbf{Compatibilité avec les données ordinales} : Approprié pour les échelles de Likert (valence, arousal, etc.)
+\end{itemize}
+
+\subsubsection{Matrice de corrélation de Spearman}
+```{r}
+library(corrplot)
+library(Hmisc)
+vars_quanti <- c("valence", "arousal", "dominance", "liking", "familiarity",
+                 paste0("EEG_", 1:14), "ECG_1", "ECG_2", "GSR_1")
+cor_result <- rcorr(as.matrix(data[, vars_quanti]), type = "spearman")
+cor_mat <- cor_result$r
+p_mat <- cor_result$P
+corrplot(cor_mat,
+         method = "color",
+         type = "upper",
+         order = "hclust",
+         tl.srt = 45,         
+         tl.cex = 0.8,       
+         addCoef.col = "black",
+         number.cex = 0.4,
+         col = colorRampPalette(c("#B2182B", "white", "#2166AC"))(200),
+         title = "\nMatrice de corrélation de Spearman complète\n",
+         mar = c(0,0,3,0))
+
+```
+Interprétation : La matrice met en évidence une structure globale faiblement corrélée. La grande majorité des coefficients se situent entre –0,10 et +0,10, ce qui correspond à des corrélations négligeables à très faibles. Cela indique que les variables étudiées ne partagent que peu de variance commune.
+
+
+\subsection{Étude de la corrélation entre les variables émotionnelles continues}
+
+Dans cette section, nous présentons les corrélations entre les différentes dimensions émotionnelles continues : **valence**, **arousal**, **dominance**, **liking** et **familiarity**.
+
+\subsubsection{Justification du choix du test de corrélation}
+Nous avons choisi d’utiliser le **coefficient de corrélation de Spearman**, car :
+
+- Le coefficient de Spearman est non paramétrique et ne requiert pas la normalité des données.
+- Comme le test de Shapiro-Wilk indique que nos variables ne sont pas normales (p < 0,05 pour toutes les variables – voir section 5.2.5.3), Spearman est adapté pour évaluer les relations monotones entre elles.
+
+\subsubsection{Méthodologie de calcul}
+Les corrélations de Spearman ont été calculées pour toutes les paires de variables émotionnelles continues. Les p-values associées ont été utilisées pour déterminer la significativité des relations.
+
+
+```{r}
+library(purrr)
+library(tidyr)
+
+# Variables émotionnelles continues
+emo_cont <- data[, c("valence", "arousal", "dominance", "liking", "familiarity")]
+
+# Calcul des corrélations Spearman + p-values
+corr_table <- expand.grid(
+  var1 = colnames(emo_cont),
+  var2 = colnames(emo_cont),
+  stringsAsFactors = FALSE
+) %>%
+  filter(var1 < var2) %>%
+  mutate(
+    test = map2(var1, var2, ~ suppressWarnings(
+      cor.test(emo_cont[[.x]], emo_cont[[.y]], method = "spearman")
+    )),
+    rho = map_dbl(test, ~ round(.x$estimate, 3)),
+    p_value = map_dbl(test, ~ .x$p.value),
+    p_value_text = case_when(
+      p_value < 0.001 ~ "<0.001",
+      TRUE ~ as.character(round(p_value, 3))
+    ),
+    significant = ifelse(p_value < 0.05, "Oui", "Non")
+  ) %>%
+  select(var1, var2, rho, p_value_text, significant)
+
+# Affichage du tableau
+corr_table %>%
+  kable(
+    caption = "Corrélations de Spearman entre les variables émotionnelles",
+    col.names = c("Variable 1", "Variable 2", "Rho", "p-value", "Significatif"),
+    align = c("l", "l", "c", "c", "c")
+  ) %>%
+  kable_styling(
+  full_width = FALSE,
+  bootstrap_options = c("striped", "hover", "condensed"),
+  font_size = 8
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#f0f0f0")
+
+```
+
+Nos analyses préliminaires ont révélé que :
+
+la plupart des dimensions émotionnelles continues ne sont pas significativement corrélées entre elles. Seules de faibles corrélations négatives significatives apparaissent entre familiarity et liking ainsi qu’entre dominance et familiarity. Cela suggère que, globalement, ces émotions sont relativement indépendantes dans ce contexte.
+
+
+\subsubsection{Choix du type de test}
+
+Pour étudier les différences entre les variables quantitatives selon les modalités des variables qualitatives, le choix du test statistique approprié doit tenir compte de deux aspects fondamentaux :
+
+\begin{itemize}
+\item \textbf{Normalité des distributions }: Les tests paramétriques (comme le test t de Student) nécessitent que les données suivent une distribution normale.
+
+\item \textbf{Homogénéité des variances }: Ces mêmes tests supposent également que les variances des groupes comparés sont égales.
+\end{itemize}
+
+
+Nos analyses préliminaires ont révélé que :
+
+Les variables quantitatives ne suivent pas une distribution normale (tests de Shapiro-Wilk, p < 0,05 pour toutes les variables cibles - voir section 5.2.5.3).
+
+Face à ces conditions, l'utilisation de tests paramétriques classiques n'est pas justifiée. Nous avons donc opté pour le test non paramétriques : Test de Mann-Whitney .
+
+\subsubsection{Application des tests de Mann-Whitney}
+
+```{r}
+vars_qual <- c("video_type", "anger", "disgust", "fear", 
+               "happiness", "sadness", "surprise")
+vars_quanti <- c("valence", "arousal", "dominance", "liking", "familiarity",
+                 paste0("EEG_", 1:14), "ECG_1", "ECG_2", "GSR_1")
+mannwhitney_results <- data.frame()
+
+for(qual in vars_qual) {
+  for(quanti in vars_quanti) {
+    
+    
+    groupes <- unique(data[[qual]])
+    if(length(groupes) == 2) {
+      
+      
+      test <- wilcox.test(data[[quanti]] ~ data[[qual]], 
+                         exact = FALSE)
+      
+     
+      med_group0 <- median(data[data[[qual]] == groupes[1], quanti], na.rm = TRUE)
+      med_group1 <- median(data[data[[qual]] == groupes[2], quanti], na.rm = TRUE)
+mannwhitney_results <- rbind(mannwhitney_results, data.frame(
+        Var_qualitative = qual,
+        Var_quantitative = quanti,
+        Mediane_groupe0 = round(med_group0, 3),
+        Mediane_groupe1 = round(med_group1, 3),
+        P_value = format.pval(test$p.value, digits = 3),
+        Significatif = ifelse(test$p.value < 0.05, "OUI", "NON")
+      ))
+    }
+  }
+}
+sig_results <- mannwhitney_results[mannwhitney_results$Significatif == "OUI", ]
+sig_results <- sig_results[order(sig_results$P_value), ]
+
+kable(head(sig_results, 20), 
+      format = "latex",
+      booktabs = TRUE,
+      caption = "Tests de Mann-Whitney significatifs (p < 0.05) - Top 20",
+      align = "llcccc",
+      row.names = FALSE) %>%
+  kable_styling(font_size = 8, latex_options = c("HOLD_position", "striped")) %>%
+  row_spec(0, bold = TRUE) %>%
+  column_spec(1, width = "2.5cm") %>%
+  column_spec(2, width = "2.5cm")
+vars_cibles <- c("valence", "arousal", "dominance", "liking", "familiarity")
+
+# Pour video_type
+par(mfrow = c(2, 3), mar = c(4, 4, 3, 1))
+for(cible in vars_cibles) {
+  boxplot(data[[cible]] ~ data$video_type,
+          xlab = "Type de vidéo (0=short, 1=long)",
+          ylab = cible,
+          main = paste("Distribution de", cible, "par type"),
+          col = c("lightblue", "lightcoral"),
+          names = c("Short", "Long"))
+}
+par(mfrow = c(2, 3), mar = c(4, 4, 3, 1))
+emotions <- c("anger", "disgust", "fear", "happiness", "sadness", "surprise")
+
+for(emotion in emotions) {
+  boxplot(data$valence ~ data[[emotion]],
+          xlab = paste(emotion, "(0=absent, 1=présent)"),
+          ylab = "Valence",
+          main = paste("Valence selon", emotion),
+          col = c("lightgray", "orange"),
+          names = c("Absent", "Présent"))
+}
+```
+Comme les données ne suivent pas une loi normale, nous avons utilisé le test de Mann-whitney.  
+
+Interprétation du boxplot video_type : 
+\begin{itemize}
+\item \textbf{Valence} : On observe : Médianes très proches entre vidéos courtes et longues.
+Forte dispersion et chevauchement des boîtes. 
+Le type de vidéo (short vs long) n’influence pas fortement la valence, ou l’effet est très faible.
+\item \textbf{Arousal} : On observe une structur esimilaire à celle de la valence, avec peu de différence entre les deux groupes.
+\item \textbf{Dominance} : Les médianes sont quasi identiques, la variabilité est élevée, et aucun effet clair du type de vidéo n’apparaît.
+\item \textbf{ Liking } : La médiane du groupe Long semble légèrement plus élevée, suggérant une préférence possible mais faible.
+\item \textbf{ Familiarity} : On observe un très léger décalage, mais pas suffisamment prononcé pour indiquer un effet marqué.
+
+\end{itemize}
+
+\subsection{ Independance entre les Variables à expliquées et variables explicatives : Regression linéaire multiple }
+\subsubsection{ Préparation des variables }
+```{r}
+cibles <- c("valence", "arousal", "dominance", "liking", "familiarity")
+
+explicatives <- c(paste0("EEG_", 1:14), "ECG_1", "ECG_2", "GSR_1","anger", "disgust",
+                  "fear", "happiness", "sadness", "surprise","video_type")
+```
+\subsubsection{Fonction pour analyser un modèle linéaire}
+```{r}
+analyser_modele_lm <- function(cible, data, explicatives) {
+  # 1. Construction du modèle
+  formule <- as.formula(paste(cible, "~", paste(explicatives, collapse = " + ")))
+  modele <- lm(formule, data = data)
+  # 2. Résumé du modèle
+  resume <- summary(modele)
+  # 3. Extraction des coefficients
+  coef_df <- as.data.frame(resume$coefficients)
+  colnames(coef_df) <- c("Estimate", "Std_Error", "t_value", "p_value")
+  coef_df$Variable <- rownames(coef_df)
+  rownames(coef_df) <- NULL
+  # 4. Ajout de la significativité
+  coef_df$Significatif <- ifelse(coef_df$p_value < 0.05, "OUI", "NON")
+  coef_df$Significatif_stars <- cut(coef_df$p_value,
+                                    breaks = c(0, 0.001, 0.01, 0.05, 1),
+                                    labels = c("***", "**", "*", ""))
+  # 5. Métriques globales du modèle
+  metriques <- data.frame(
+    R2 = resume$r.squared,
+    R2_ajuste = resume$adj.r.squared,
+    F_statistic = resume$fstatistic[1],
+    p_modele = pf(resume$fstatistic[1], 
+                  resume$fstatistic[2], 
+                  resume$fstatistic[3], 
+                  lower.tail = FALSE),
+    n_obs = nrow(data)
+  )
+  
+  return(list(
+    modele = modele,
+    coefficients = coef_df,
+    metriques = metriques,
+    formule = formule
+  ))
+}
+```
+
+\subsubsection{Application à toutes les variables cibles}
+```{r}
+### 7.3 Application aux 5 variables cibles
+resultats_regression <- list()
+
+for (cible in cibles) {
+  cat("\n=== Analyse pour la variable cible :", cible, "===\n")
+  
+  resultats <- analyser_modele_lm(cible, data, explicatives)
+  resultats_regression[[cible]] <- resultats
+  
+  # Affichage des métriques
+  cat("R² =", round(resultats$metriques$R2, 3), 
+      " | R² ajusté =", round(resultats$metriques$R2_ajuste, 3),
+      " | p(global) =", format.pval(resultats$metriques$p_modele, digits = 3), "\n")
+  
+  # Extraction des variables significatives (hors intercept)
+  coef_signif <- resultats$coefficients %>%
+    filter(Significatif == "OUI" & Variable != "(Intercept)")
+  
+  nb_signif <- nrow(coef_signif)
+  cat(nb_signif, "variables explicatives significatives (p < 0.05)\n")
+  
+  # Affichage détaillé des variables significatives
+  if (nb_signif > 0) {
+    cat("\nDétail des variables significatives :\n")
+    for (i in 1:nrow(coef_signif)) {
+      ligne <- coef_signif[i, ]
+      cat("  - ", ligne$Variable, 
+          " : β = ", round(ligne$Estimate, 4),
+          " (p = ", round(ligne$p_value, 4), ")", 
+          " → ", ligne$Significatif_stars, "\n", sep = "")
+    }
+  } else {
+    cat("Aucune variable explicative significative.\n")
+  }
+  cat("---\n")
+}
+
+# Compilation des coefficients significatifs de tous les modèles
+tous_coefs <- data.frame()
+
+for (cible in cibles) {
+  coef_df <- resultats_regression[[cible]]$coefficients
+  coef_df$Cible <- cible
+  # Filtrer les coefficients significatifs (sauf l'intercept)
+  coef_signif <- coef_df %>% 
+    filter(Significatif == "OUI" & Variable != "(Intercept)")
+  
+  if (nrow(coef_signif) > 0) {
+    tous_coefs <- bind_rows(tous_coefs, coef_signif)
+  }
+}
+
+# Tableau des coefficients significatifs
+if (nrow(tous_coefs) > 0) {
+  tableau_coefs <- tous_coefs %>%
+    select(Cible, Variable, Estimate, Std_Error, p_value, Significatif_stars) %>%
+    arrange(Cible, p_value)
+  
+  kable(tableau_coefs,
+        format = "latex",
+        booktabs = TRUE,
+        caption = "Variables explicatives significatives dans les régressions 
+                   linéaires multiples",
+        align = "lcccrl",
+        col.names = c("Variable cible", "Variable explicative", "Coefficient", 
+                      "Erreur Std", "p-value", "Signif."),
+        digits = c(NA, NA, 3, 3, 4, NA)) %>%
+    kable_styling(font_size = 9, latex_options = c("HOLD_position", "striped")) %>%
+    row_spec(0, bold = TRUE)
+} else {
+  cat("Aucune variable explicative significative au seuil de 5%.\n")
+}
+
+metriques_tous <- data.frame()
+
+for (cible in cibles) {
+  met <- resultats_regression[[cible]]$metriques
+  met$Cible <- cible
+  metriques_tous <- bind_rows(metriques_tous, met)
+}
+
+kable(metriques_tous %>% 
+        select(Cible, R2, R2_ajuste, F_statistic, p_modele, n_obs),
+      format = "latex",
+      booktabs = TRUE,
+      caption = "Métriques des modèles de régression linéaire multiple",
+      align = "lccccc",
+      col.names = c("Variable cible", "R²", "R² ajusté", "F", "p(global)", "n"),
+      digits = c(NA, 3, 3, 1, 4, 0)) %>%
+  kable_styling(font_size = 9, latex_options = "HOLD_position") %>%
+  row_spec(0, bold = TRUE)
+```
+
+\begin{itemize}
+\item \textbf{ * } : signifie p < 0.05 (significatif au seuil de 5%)
+
+\item \textbf{ ** } :signifie p < 0.01 (très significatif)
+
+\item \textbf{ *** } : signifie p < 0.001 (hautement significatif)
+\end{itemize}
+
+
+\subsubsection{ Vérifications des hypothèses (résidus)}
+```{r}
+library(ggplot2)
+library(gridExtra)
+
+# Fonction pour créer les diagnostics graphiques
+diagnostics_modele <- function(cible, resultats) {
+  modele <- resultats$modele
+  residus <- residuals(modele)
+  
+  # 1. Normalité des résidus (QQ-plot)
+  p1 <- ggplot(data.frame(residus = residus), aes(sample = residus)) +
+    stat_qq() + stat_qq_line() +
+    labs(title = paste("QQ-plot des résidus -", cible),
+         x = "Quantiles théoriques", y = "Quantiles observés") +
+    theme_minimal()
+  
+  # 2. Homoscédasticité (résidus vs valeurs prédites)
+  p2 <- ggplot(data.frame(fitted = fitted(modele), residus = residus),
+               aes(x = fitted, y = residus)) +
+    geom_point(alpha = 0.5) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+    labs(title = paste("Homoscédasticité -", cible),
+         x = "Valeurs prédites", y = "Résidus") +
+    theme_minimal()
+  
+  # 3. Test de Shapiro-Wilk sur les résidus
+  shapiro_test <- shapiro.test(residus)
+  
+  return(list(
+    plot_qq = p1,
+    plot_residus = p2,
+    shapiro_p = shapiro_test$p.value,
+    residus_normaux = shapiro_test$p.value > 0.05
+  ))
+}
+
+# Application à tous les modèles
+diagnostics <- list()
+for (cible in cibles) {
+  diagnostics[[cible]] <- diagnostics_modele(cible, resultats_regression[[cible]])
+  cat(cible, "- p(Shapiro) =", 
+      format.pval(diagnostics[[cible]]$shapiro_p, digits = 3),
+      ifelse(diagnostics[[cible]]$residus_normaux, "(résidus normaux)",
+             "(résidus non-normaux)"),
+      "\n")
+}
+
+# Affichage des graphiques (exemple pour la première cible)
+if (length(cibles) > 0) {
+  premier_cible <- cibles[1]
+  grid.arrange(diagnostics[[premier_cible]]$plot_qq,
+               diagnostics[[premier_cible]]$plot_residus,
+               ncol = 2)
+}
+```
+
+\subsubsection{Synthèse interprétative}
+
+```{r}
+
+#### 8.4 Synthèse des prédicteurs influents ####
+
+# 1. Préparation des données
+if (nrow(tous_coefs) > 0) {
+  
+  # Correction du nom de colonne (Gible -> Cible)
+  colnames(tous_coefs)[colnames(tous_coefs) == "Gible"] <- "Cible"
+  
+  # Synthèse des prédicteurs
+  predicteurs_frequents <- tous_coefs %>%
+    group_by(Variable) %>%
+    summarise(
+      `Nb modèles` = n(),
+      `Modèles influencés` = paste(Cible, collapse = ", "),
+      `Coefficient moyen` = round(mean(Estimate, na.rm = TRUE), 4),
+      `Direction` = ifelse(mean(Estimate, na.rm = TRUE) > 0, "Positive", "Negative"),
+      `p-value moyenne` = round(mean(p_value, na.rm = TRUE), 4)
+    ) %>%
+    arrange(desc(`Nb modèles`), `p-value moyenne`)
+  
+  # 2. Tableau principal des prédicteurs
+  cat("\n\n### Tableau 27 : Synthèse des prédicteurs significatifs\n")
+  
+  kable(predicteurs_frequents,
+        format = "latex",
+        booktabs = TRUE,
+        caption = "Synthèse des variables explicatives influentes sur les 
+                   dimensions affectives",
+        align = "lcccc",
+        col.names = c("Variable", "Nb", "Dimensions affectives", "β moyen", 
+                      "Direction", "p moyen")) %>%
+    kable_styling(font_size = 9, latex_options = c("HOLD_position", "striped")) %>%
+    row_spec(0, bold = TRUE) %>%
+    column_spec(1, bold = TRUE) %>%  # Variables en gras
+    column_spec(3, width = "4cm") %>%  # Plus large pour les dimensions
+    column_spec(4:6, width = "2cm")  # Colonnes étroites pour chiffres
+  
+} else {
+  cat("\n**Aucun prédicteur significatif au seuil de 5%.**\n")
+}
+
+# 3. Tableau de qualité des modèles
+cat("\n\n### Tableau 28 : Qualité des modèles de régression\n")
+
+metriques_tous <- data.frame()
+for (cible in cibles) {
+  met <- resultats_regression[[cible]]$metriques
+  met$Cible <- cible
+  metriques_tous <- bind_rows(metriques_tous, met)
+}
+
+# Ajout d'interprétation
+metriques_tous <- metriques_tous %>%
+  mutate(
+    `Qualité modèle` = case_when(
+      R2_ajuste > 0.3 ~ "Bonne",
+      R2_ajuste > 0.1 ~ "Modeste",
+      R2_ajuste > 0 ~ "Faible",
+      TRUE ~ "Nulle (pire qu'une moyenne)"
+    ),
+    `Significatif global` = ifelse(p_modele < 0.05, "OUI", "NON")
+  ) %>%
+  select(Cible, R2, R2_ajuste, `Significatif global`, p_modele, `Qualité modèle`
+         , n_obs)
+
+kable(metriques_tous,
+      format = "latex",
+      booktabs = TRUE,
+      caption = "Évaluation de la qualité des modèles de régression 
+      linéaire multiple",
+      align = "lcccccl",
+      col.names = c("Dimension", "R²", "R² ajusté", "Signif. global", "p global"
+                    , "Qualité", "n"),
+      digits = c(NA, 3, 3, NA, 3, NA, 0)) %>%
+  kable_styling(font_size = 9, latex_options = c("HOLD_position")) %>%
+  row_spec(0, bold = TRUE) %>%
+  column_spec(6, color = ifelse(metriques_tous$`Qualité modèle` == "Nulle 
+                                (pire qu'une moyenne)", 
+                                "red", "black"))
+
+```
+\section{Régression Logistique : Modélisation et Interprétation}
+
+```{r setup-logit, message=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+library(car)       # pour vif()
+library(pROC)      # pour ROC/AUC
+library(gridExtra) # pour les visualisations
+```
+\subsubsection{Préparation des données et exploration}
+```{r}
+# Sélection des variables
+
+data_logit <- data %>%
+select(
+happiness,liking,
+valence, arousal, dominance,
+EEG_1, EEG_2, EEG_3,
+ECG_1,ECG_2, GSR_1
+)
+
+# Transformation de la variable cible en binaire
+
+data_logit$happiness <- factor(
+data_logit$happiness,
+levels = c(0, 1),
+labels = c("Non", "Oui")
+)
+
+# Distribution de la variable cible
+
+table(data_logit$happiness) %>% prop.table() * 100
+
+# Visualisation rapide des variables explicatives
+
+num_vars <- data_logit %>% select(-happiness)
+pairs(num_vars, main="Pairs plot des variables explicatives")
+
+```
+\subsubsection{Estimation du modèle logistique}
+```{r}
+modele_logit <- glm(
+happiness ~ valence + arousal + dominance +liking + 
+EEG_1 + EEG_2 + EEG_3 +
+ECG_1+ECG_1 + GSR_1,
+data = data_logit,
+family = binomial(link = "logit")
+)
+
+summary(modele_logit)
+```
+
+
+\subsubsection{Vérification de la multicolinéarité}
+```{r}
+vif(modele_logit)
+
+```
+
+\subsubsection{Évaluation du modèle et performance}
+
+```{r}
+# Prédictions sur l'échantillon
+
+pred_prob <- predict(modele_logit, type = "response")
+pred_class <- ifelse(pred_prob > 0.5, "Oui", "Non")
+
+# Matrice de confusion
+
+table(Predicted = pred_class, Actual = data_logit$happiness)
+
+# Accuracy
+
+mean(pred_class == data_logit$happiness)
+
+# Courbe ROC et AUC
+
+roc_obj <- roc(data_logit$happiness, pred_prob)
+plot(roc_obj, col = "blue", main = "Courbe ROC")
+auc(roc_obj)
+
+```
+
+\subsubsection{Visualisation des distributions par cible}
+
+```{r}
+p1 <- ggplot(data_logit, aes(x = happiness, y = valence, fill=happiness)) + geom_boxplot()
+p2 <- ggplot(data_logit, aes(x = happiness, y = arousal, fill=happiness)) + geom_boxplot()
+p3 <- ggplot(data_logit, aes(x = happiness, y = dominance, fill=happiness)) + geom_boxplot()
+p4 <- ggplot(data_logit, aes(x = happiness, y = EEG_1, fill=happiness)) + geom_boxplot()
+
+grid.arrange(p1, p2, p3, p4, ncol=2)
+
+```
+
+\subsubsection{Extension à d'autres cibles émotionnelles}
+```{r}
+# Exemple pour transformer les cibles continues en binaires
+
+cibles <- c("valence", "arousal", "dominance", "liking", "familiarity")
+data_bin <- data %>%
+mutate(across(all_of(cibles), ~ ifelse(. > median(.), 1, 0))) %>%
+mutate(across(all_of(cibles), factor, levels=c(0,1), labels=c("Bas","Haut")))
+
+# Boucle pour estimer les modèles logistiques pour chaque cible
+
+resultats_logit <- list()
+for (cible in cibles) {
+formule <- as.formula(paste(cible, "~ EEG_1 + EEG_2 + EEG_3 + ECG_1 + GSR_1"))
+modele <- glm(formule, data=data_bin, family=binomial(link="logit"))
+resultats_logit[[cible]] <- summary(modele)
+}
+
+# Affichage des résultats pour valence
+
+resultats_logit[["valence"]]
+
+```
